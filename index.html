@@ -1,539 +1,542 @@
-<!DOCTYPE html>  
-<html lang="ja">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">  
-<meta name="format-detection" content="telephone=no, date=no, address=no, email=no">  
-<title>焼印オーダーシステム</title>  
-  
-<!-- Google Fonts (明朝体用) -->  
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700&display=swap" rel="stylesheet">  
-<!-- 画像化ライブラリ（html2canvas） -->  
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>  
-  
-<style>  
-  :root {  
-    --bg-color: #f7f3ed;  
-    --card-bg: #ffffff;  
-    --accent-color: #6b4423;  
-    --accent-hover: #523318;  
-    --text-color: #3e2723;  
-    --border-color: #e0d7ce;  
-    --active-color: #8d5b2e;  
-  }  
-  
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Graphik', 'Noto Sans JP', sans-serif; user-select: none; }  
-  body { background-color: var(--bg-color); color: var(--text-color); padding: 20px 15px; font-size: 14px; }  
-  
-  .container { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }  
-  
-  .header-title { text-align: center; font-size: 1.4rem; color: var(--accent-color); font-weight: bold; letter-spacing: 1px; }  
-  
-  .preview-section {  
-    background-color: var(--card-bg);  
-    border-radius: 16px;  
-    padding: 25px;  
-    box-shadow: 0 8px 20px rgba(107, 68, 35, 0.08);  
-    display: flex;  
-    flex-direction: column;  
-    align-items: center;  
-    border: 1px solid var(--border-color);  
-  }  
-  
-  /* 画面表示用の革タグスタイル */  
-  .tag-container {  
-    width: 340px;  
-    height: 142px;  
-    background: #e6cb9c;  
-    border-radius: 18px;  
-    box-shadow: inset 0 0 12px rgba(0,0,0,0.12), 4px 6px 12px rgba(0,0,0,0.15);  
-    position: relative;  
-    display: flex;  
-    flex-direction: column;  
-    justify-content: center;  
-    align-items: center;  
-    padding: 8px 12px 8px 45px;  
-    border: 2px dashed #b89a6a;  
-    outline: 6px solid #e6cb9c;  
-    overflow: hidden;  
-  }  
-  
-  .tag-hole {  
-    position: absolute;  
-    left: 18px;  
-    top: 50%;  
-    transform: translateY(-50%);  
-    width: 20px;  
-    height: 20px;  
-    background-color: var(--bg-color);  
-    border-radius: 50%;  
-    box-shadow: inset 2px 2px 4px rgba(0,0,0,0.3);  
-    border: 1px solid #ad9065;  
-  }  
-  
-  .burn-text {  
-    color: #26140b;  
-    text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.3);  
-    text-align: center;  
-    line-height: 1.1;  
-    width: 100%;  
-    display: flex;  
-    flex-direction: column;  
-    align-items: center;  
-    justify-content: center;  
-    font-weight: bold; /* 全体的に太字適用 */  
-  }  
-  
-  .preview-line1, .preview-line2 {   
-    font-weight: bold;   
-    white-space: nowrap;   
-    display: inline-block;  
-    max-width: 100%;  
-  }  
-  
-  .license-border {  
-    border: 2px solid #26140b;  
-    border-radius: 6px;  
-    padding: 6px 14px;  
-    display: flex;  
-    flex-direction: column;  
-    align-items: center;  
-    max-width: 95%;  
-  }  
-  
-  /* --- 白黒データ出力用 スタイル（枠線・穴消去） --- */  
-  .export-bw {  
-    background: #ffffff !important;  
-    border: none !important;  
-    outline: none !important;  
-    box-shadow: none !important;  
-  }  
-  .export-bw .tag-hole {  
-    display: none !important; /* 穴を非表示 */  
-  }  
-  .export-bw .burn-text {  
-    color: #000000 !important;  
-    text-shadow: none !important;  
-  }  
-  .export-bw .license-border {  
-    border-color: #000000 !important;  
-  }  
-  
-  /* レイアウトサイズ定義 */  
-  .layout-default .preview-line1 { font-size: 58px; }  
-  .layout-default .preview-line2 { display: none; }  
-  
-  .layout-number .preview-line1 { font-size: 24px; letter-spacing: 2px; }  
-  .layout-number .preview-line2 { font-size: 45px; letter-spacing: 1px; margin-top: -2px; }  
-  
-  .layout-message .preview-line1 { font-size: 33px; }  
-  .layout-message .preview-line2 { font-size: 33px; margin-top: 4px; }  
-  
-  /* フォント定義 */  
-  .font-gothic * { font-family: 'Graphik', 'Noto Sans JP', sans-serif !important; font-weight: bold !important; }  
-  .font-mincho * { font-family: 'Shippori Mincho', serif !important; font-weight: bold !important; }  
-  .font-script * { font-family: 'Snell Roundhand', cursive !important; font-weight: bold !important; }  
-  .font-hand * { font-family: 'Bradley Hand', cursive !important; font-weight: bold !important; }  
-  
-  /* 操作パネル */  
-  .control-section { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }  
-  
-  .card {  
-    background: var(--card-bg);  
-    padding: 14px;  
-    border-radius: 12px;  
-    border: 1px solid var(--border-color);  
-    box-shadow: 0 2px 6px rgba(0,0,0,0.02);  
-  }  
-  
-  .card-title {  
-    font-size: 13px;  
-    font-weight: bold;  
-    color: var(--accent-color);  
-    margin-bottom: 10px;  
-    display: flex;  
-    align-items: center;  
-    gap: 6px;  
-  }  
-  .card-title span {  
-    background: var(--accent-color);  
-    color: white;  
-    border-radius: 50%;  
-    width: 20px;  
-    height: 20px;  
-    display: inline-flex;  
-    justify-content: center;  
-    align-items: center;  
-    font-size: 11px;  
-  }  
-  
-  .template-btn {  
-    border: 2px solid var(--border-color);  
-    background: #faf6f0;  
-    padding: 8px 4px;  
-    border-radius: 10px;  
-    text-align: center;  
-    cursor: pointer;  
-    transition: all 0.2s;  
-    display: flex;  
-    flex-direction: column;  
-    align-items: center;  
-    gap: 6px;  
-  }  
-  .template-btn.active {  
-    background: #fff;  
-    border-color: var(--active-color);  
-    box-shadow: 0 4px 10px rgba(141, 91, 46, 0.25);  
-  }  
-  
-  .sample-mini-tag {  
-    width: 100%;  
-    height: 44px;  
-    background: #e6cb9c;  
-    border-radius: 6px;  
-    border: 1.5px dashed #b89a6a;  
-    display: flex;  
-    flex-direction: column;  
-    justify-content: center;  
-    align-items: center;  
-    color: #26140b;  
-    position: relative;  
-    padding-left: 10px;  
-    box-shadow: inset 0 0 4px rgba(0,0,0,0.1);  
-  }  
-  .sample-mini-tag::before {  
-    content: '';  
-    position: absolute;  
-    left: 4px;  
-    top: 50%;  
-    transform: translateY(-50%);  
-    width: 6px;  
-    height: 6px;  
-    background-color: var(--card-bg);  
-    border-radius: 50%;  
-    border: 0.5px solid #ad9065;  
-  }  
-  
-  .btn {  
-    border: 1px solid var(--border-color);  
-    background: #faf6f0;  
-    padding: 10px 4px;  
-    border-radius: 8px;  
-    text-align: center;  
-    font-size: 12px;  
-    cursor: pointer;  
-    transition: all 0.2s;  
-    color: var(--text-color);  
-    -webkit-tap-highlight-color: transparent;  
-  }  
-  .btn.active {  
-    background: var(--active-color);  
-    color: white;  
-    border-color: var(--active-color);  
-    font-weight: bold;  
-    box-shadow: 0 2px 5px rgba(141, 91, 46, 0.3);  
-  }  
-  
-  input[type="text"] {  
-    width: 100%;  
-    padding: 10px;  
-    border: 1px solid var(--border-color);  
-    border-radius: 8px;  
-    font-size: 14px;  
-    margin-bottom: 8px;  
-    outline: none;  
-    background: #fafaef;  
-  }  
-  input[type="text"]:focus { border-color: var(--active-color); background: #ffffff; }  
-  
-  .save-btn {  
-    width: 100%;  
-    background: var(--accent-color);  
-    color: white;  
-    border: none;  
-    padding: 16px;  
-    border-radius: 12px;  
-    font-size: 16px;  
-    font-weight: bold;  
-    cursor: pointer;  
-    box-shadow: 0 4px 12px rgba(107, 68, 35, 0.25);  
-    transition: background 0.2s;  
-    text-align: center;  
-    margin-top: 10px;  
-  }  
-  .save-btn:active { background: var(--accent-hover); }  
-  
-  .modal-overlay {  
-    display: none;  
-    position: fixed;  
-    top:0; left:0; width:100%; height:100%;  
-    background: rgba(0,0,0,0.8);  
-    z-index: 999;  
-    justify-content: center;  
-    align-items: center;  
-    flex-direction: column;  
-    padding: 20px;  
-  }  
-  .modal-img { max-width: 90%; border-radius: 12px; box-shadow: 0 0 20px rgba(255,255,255,0.2); background: white; }  
-  .modal-text { color: white; margin-top: 15px; font-size: 14px; text-align: center; }  
-  .close-btn { margin-top: 15px; padding: 8px 20px; background: white; border-radius: 20px; font-weight: bold; cursor: pointer; }  
-</style>  
-</head>  
-<body>  
-  
-<div class="container">  
-  
-  <div class="header-title">✨ レザータグ 刻印シミュレーター ✨</div>  
-  
-  <div class="preview-section">  
-    <div class="tag-container" id="tag-preview">  
-      <div class="tag-hole"></div>  
-      <div id="preview-content" class="burn-text font-gothic layout-default">  
-        <div id="text-line1" class="preview-line1">Hana</div>  
-        <div id="text-line2" class="preview-line2"></div>  
-      </div>  
-    </div>  
-  </div>  
-  
-  <div class="control-section">  
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+<title>焼印オーダーシステム</title>
+
+<!-- Google Fonts (明朝体用) -->
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700&display=swap" rel="stylesheet">
+<!-- 画像化ライブラリ（html2canvas） -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+  :root {
+    --bg-color: #f7f3ed;
+    --card-bg: #ffffff;
+    --accent-color: #6b4423;
+    --accent-hover: #523318;
+    --text-color: #3e2723;
+    --border-color: #e0d7ce;
+    --active-color: #8d5b2e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Graphik', 'Noto Sans JP', sans-serif; user-select: none; }
+  body { background-color: var(--bg-color); color: var(--text-color); padding: 20px 15px; font-size: 14px; }
+
+  .container { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+  .header-title { text-align: center; font-size: 1.4rem; color: var(--accent-color); font-weight: bold; letter-spacing: 1px; }
+
+  .preview-section {
+    background-color: var(--card-bg);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 8px 20px rgba(107, 68, 35, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid var(--border-color);
+  }
+
+  /* 画面表示用の革タグスタイル */
+  .tag-container {
+    width: 340px;
+    height: 142px;
+    background: #e6cb9c;
+    border-radius: 18px;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.12), 4px 6px 12px rgba(0,0,0,0.15);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 12px 8px 45px;
+    border: 2px dashed #b89a6a;
+    outline: 6px solid #e6cb9c;
+    overflow: hidden;
+  }
+
+  .tag-hole {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background-color: var(--bg-color);
+    border-radius: 50%;
+    box-shadow: inset 2px 2px 4px rgba(0,0,0,0.3);
+    border: 1px solid #ad9065;
+  }
+
+  .burn-text {
+    color: #26140b;
+    text-shadow: 0.5px 0.5px 0px rgba(255,255,255,0.3);
+    text-align: center;
+    line-height: 1.1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+
+  .preview-line1, .preview-line2 { 
+    font-weight: bold; 
+    white-space: nowrap; 
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  .license-border {
+    border: 2px solid #26140b;
+    border-radius: 6px;
+    padding: 6px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 95%;
+  }
+
+  /* --- 白黒データ出力用 スタイル（文字・モチーフを拡大保存） --- */
+  .export-bw {
+    background: #ffffff !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 8px !important; /* 穴用の左側余白を削って領域を最大活用 */
+  }
+  .export-bw .tag-hole {
+    display: none !important; /* 穴を非表示 */
+  }
+  .export-bw .burn-text {
+    color: #000000 !important;
+    text-shadow: none !important;
+    transform: scale(1.6); /* 保存時のみ文字とモチーフを1.6倍にドカンと拡大 */
+    transform-origin: center center;
+  }
+  .export-bw .license-border {
+    border-color: #000000 !important;
+  }
+
+  /* レイアウトサイズ定義 */
+  .layout-default .preview-line1 { font-size: 58px; }
+  .layout-default .preview-line2 { display: none; }
+
+  .layout-number .preview-line1 { font-size: 24px; letter-spacing: 2px; }
+  .layout-number .preview-line2 { font-size: 45px; letter-spacing: 1px; margin-top: -2px; }
+
+  .layout-message .preview-line1 { font-size: 33px; }
+  .layout-message .preview-line2 { font-size: 33px; margin-top: 4px; }
+
+  /* フォント定義 */
+  .font-gothic * { font-family: 'Graphik', 'Noto Sans JP', sans-serif !important; font-weight: bold !important; }
+  .font-mincho * { font-family: 'Shippori Mincho', serif !important; font-weight: bold !important; }
+  .font-script * { font-family: 'Snell Roundhand', cursive !important; font-weight: bold !important; }
+  .font-hand * { font-family: 'Bradley Hand', cursive !important; font-weight: bold !important; }
+
+  /* 操作パネル */
+  .control-section { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .card {
+    background: var(--card-bg);
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-title span {
+    background: var(--accent-color);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 11px;
+  }
+
+  .template-btn {
+    border: 2px solid var(--border-color);
+    background: #faf6f0;
+    padding: 8px 4px;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .template-btn.active {
+    background: #fff;
+    border-color: var(--active-color);
+    box-shadow: 0 4px 10px rgba(141, 91, 46, 0.25);
+  }
+
+  .sample-mini-tag {
+    width: 100%;
+    height: 44px;
+    background: #e6cb9c;
+    border-radius: 6px;
+    border: 1.5px dashed #b89a6a;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #26140b;
+    position: relative;
+    padding-left: 10px;
+    box-shadow: inset 0 0 4px rgba(0,0,0,0.1);
+  }
+  .sample-mini-tag::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background-color: var(--card-bg);
+    border-radius: 50%;
+    border: 0.5px solid #ad9065;
+  }
+
+  .btn {
+    border: 1px solid var(--border-color);
+    background: #faf6f0;
+    padding: 10px 4px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-color);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn.active {
+    background: var(--active-color);
+    color: white;
+    border-color: var(--active-color);
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(141, 91, 46, 0.3);
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 8px;
+    outline: none;
+    background: #fafaef;
+  }
+  input[type="text"]:focus { border-color: var(--active-color); background: #ffffff; }
+
+  .save-btn {
+    width: 100%;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(107, 68, 35, 0.25);
+    transition: background 0.2s;
+    text-align: center;
+    margin-top: 10px;
+  }
+  .save-btn:active { background: var(--accent-hover); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 20px;
+  }
+  .modal-img { max-width: 90%; border-radius: 12px; box-shadow: 0 0 20px rgba(255,255,255,0.2); background: white; }
+  .modal-text { color: white; margin-top: 15px; font-size: 14px; text-align: center; }
+  .close-btn { margin-top: 15px; padding: 8px 20px; background: white; border-radius: 20px; font-weight: bold; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="header-title">✨ レザータグ 刻印シミュレーター ✨</div>
+
+  <div class="preview-section">
+    <div class="tag-container" id="tag-preview">
+      <div class="tag-hole"></div>
+      <div id="preview-content" class="burn-text font-gothic layout-default">
+        <div id="text-line1" class="preview-line1">Hana</div>
+        <div id="text-line2" class="preview-line2"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="control-section">
+    
+    <div class="card">
+      <div class="card-title"><span>1</span>レイアウトを選ぶ</div>
+      <div class="btn-group grid-3">
+        <div class="template-btn active" onclick="setLayout('default', this)">
+          <div class="sample-mini-tag">
+            <span style="font-weight:bold; font-size:11px;">🐾 Hana 🐾</span>
+          </div>
+          <span style="font-size:11px; font-weight:bold;">① 定番</span>
+        </div>
+
+        <div class="template-btn" onclick="setLayout('number', this)">
+          <div class="sample-mini-tag">
+            <div style="border:1px solid #26140b; padding:1px 3px; border-radius:2px; display:flex; flex-direction:column; align-items:center;">
+              <span style="font-size:6px; line-height:1;">名古屋 332</span>
+              <span style="font-size:8px; font-weight:bold; line-height:1.1;">ぬ 37-50</span>
+            </div>
+          </div>
+          <span style="font-size:11px; font-weight:bold;">② ナンバー</span>
+        </div>
+
+        <div class="template-btn" onclick="setLayout('message', this)">
+          <div class="sample-mini-tag">
+            <span style="font-size:7px; line-height:1;">LOVE</span>
+            <span style="font-size:8px; font-weight:bold; line-height:1.1;">♥ Hana ♥</span>
+          </div>
+          <span style="font-size:11px; font-weight:bold;">③ メッセージ</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>2</span>文字を入力する</div>
+      <input type="text" id="input1" value="Hana" placeholder="1行目 (例: Hana)" oninput="updateText()">
+      <input type="text" id="input2" value="" placeholder="2行目" oninput="updateText()" style="display:none;">
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>3</span>フォントを選ぶ</div>
+      <div class="btn-group grid-2">
+        <button type="button" class="btn active" onclick="setFont('font-gothic', this)">ゴシック<br><span style="font-family:'Graphik'; font-weight:bold;">Aa</span></button>
+        <button type="button" class="btn" onclick="setFont('font-mincho', this)">明朝体<br><span style="font-family:'Shippori Mincho'; font-weight:bold;">Aa</span></button>
+        <button type="button" class="btn" onclick="setFont('font-script', this)">筆記体<br><span style="font-family:'Snell Roundhand'; font-weight:bold; font-size:120%;">Aa</span></button>
+        <button type="button" class="btn" onclick="setFont('font-hand', this)">手書き風<br><span style="font-family:'Bradley Hand'; font-weight:bold;">Aa</span></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>4</span>アイコンと位置</div>
+      <div style="margin-bottom: 8px;">
+        <div class="btn-group grid-4" id="icon-selector">
+          <button type="button" class="btn active" onclick="setIcon('', this)">なし</button>
+          <button type="button" class="btn" onclick="setIcon('🐾', this)">🐾 肉球</button>
+          <button type="button" class="btn" onclick="setIcon('🐕‍🦺', this)">🐕‍🦺 犬</button>
+          <button type="button" class="btn" onclick="setIcon('🐈‍⬛', this)">🐈‍⬛ 猫</button>
+          <button type="button" class="btn" onclick="setIcon('♥', this)">♥ ハート</button>
+          <button type="button" class="btn" onclick="setIcon('★', this)">★ 星</button>
+          <button type="button" class="btn" onclick="setIcon('🎵', this)">🎵 音符</button>
+        </div>
+      </div>
+      <div class="card-title" style="margin-top:6px;">配置位置</div>
+      <div class="btn-group grid-3">
+        <button type="button" class="btn" onclick="setIconPos('front', this)">前</button>
+        <button type="button" class="btn" onclick="setIconPos('back', this)">後</button>
+        <button type="button" class="btn active" onclick="setIconPos('both', this)">前後</button>
+      </div>
+    </div>
+
+  </div>
+
+  <button type="button" class="save-btn" onclick="saveTagImage()">📷 刻印用データを保存（文字のみ白黒）</button>
+
+</div>
+
+<div class="modal-overlay" id="imageModal">
+  <img id="modalImg" class="modal-img" src="" alt="刻印用データ">
+  <div class="modal-text">白黒データが生成されました。<br>画像を長押しして保存してください。</div>
+  <div class="close-btn" onclick="closeModal()">閉じる</div>
+</div>
+
+<script>
+  let currentLayout = 'default';
+  let currentFont = 'font-gothic';
+  let currentIcon = '';
+  let currentIconPos = 'both';
+
+  const maxFontSizes = {
+    'default': { line1: 58, line2: 0 },
+    'number': { line1: 24, line2: 45 },
+    'message': { line1: 33, line2: 33 }
+  };
+
+  function updateText() {
+    const line1Val = document.getElementById('input1').value;
+    const line2Val = document.getElementById('input2').value;
+    
+    let line1Text = line1Val;
+    let line2Text = line2Val;
+
+    if (currentIcon) {
+      if (currentLayout === 'message') {
+        if (currentIconPos === 'front') line2Text = `${currentIcon} ${line2Val}`;
+        else if (currentIconPos === 'back') line2Text = `${line2Val} ${currentIcon}`;
+        else if (currentIconPos === 'both') line2Text = `${currentIcon} ${line2Val} ${currentIcon}`;
+      } else {
+        if (currentIconPos === 'front') line1Text = `${currentIcon} ${line1Val}`;
+        else if (currentIconPos === 'back') line1Text = `${line1Val} ${currentIcon}`;
+        else if (currentIconPos === 'both') line1Text = `${currentIcon} ${line1Val} ${currentIcon}`;
+      }
+    }
+
+    const elLine1 = document.getElementById('text-line1');
+    const elLine2 = document.getElementById('text-line2');
+
+    elLine1.innerText = line1Text || ' ';
+    elLine2.innerText = line2Text;
+
+    adjustFontSize();
+  }
+
+  function adjustFontSize() {
+    const tagContainer = document.getElementById('tag-preview');
+    const padding = (currentLayout === 'number') ? 95 : 70;
+    const maxWidth = tagContainer.clientWidth - padding; 
+
+    const elLine1 = document.getElementById('text-line1');
+    const elLine2 = document.getElementById('text-line2');
+
+    let size1 = maxFontSizes[currentLayout].line1;
+    elLine1.style.fontSize = size1 + 'px';
+    while (elLine1.scrollWidth > maxWidth && size1 > 10) {
+      size1 -= 1;
+      elLine1.style.fontSize = size1 + 'px';
+    }
+
+    if (currentLayout !== 'default') {
+      let size2 = maxFontSizes[currentLayout].line2;
+      elLine2.style.fontSize = size2 + 'px';
+      while (elLine2.scrollWidth > maxWidth && size2 > 10) {
+        size2 -= 1;
+        elLine2.style.fontSize = size2 + 'px';
+      }
+    }
+  }
+
+  function setLayout(layout, el) {
+    currentLayout = layout;
+    const input2 = document.getElementById('input2');
+    const content = document.getElementById('preview-content');
+
+    document.querySelectorAll('.template-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+
+    content.classList.remove('layout-default', 'layout-number', 'layout-message', 'license-border');
+
+    if (layout === 'default') {
+      content.classList.add('layout-default');
+      input2.style.display = 'none';
+    } else if (layout === 'number') {
+      content.classList.add('layout-number', 'license-border');
+      input2.style.display = 'block';
+      input2.placeholder = "例: ぬ 37-50 (下段)";
+      document.getElementById('input1').placeholder = "例: 名古屋 332 (上段)";
+    } else if (layout === 'message') {
+      content.classList.add('layout-message');
+      input2.style.display = 'block';
+      input2.placeholder = "例: Hana (下段)";
+      document.getElementById('input1').placeholder = "例: LOVE (上段)";
+    }
+    updateText();
+  }
+
+  function setFont(fontClass, el) {
+    currentFont = fontClass;
+    const content = document.getElementById('preview-content');
+    
+    content.classList.remove('font-gothic', 'font-mincho', 'font-script', 'font-hand');
+    content.classList.add(fontClass);
+
+    el.parentNode.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+
+    adjustFontSize();
+  }
+
+  function setIcon(iconSymbol, el) {
+    currentIcon = iconSymbol;
+    el.parentNode.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    updateText();
+  }
+
+  function setIconPos(pos, el) {
+    currentIconPos = pos;
+    el.parentNode.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    updateText();
+  }
+
+  // ★ 白黒画像出力処理（文字・モチーフ拡大出力） ★
+  function saveTagImage() {
+    const tagElement = document.getElementById('tag-preview');
+    
+    if (typeof html2canvas === 'undefined') {
+      alert("ライブラリが読み込めませんでした。ネット接続をご確認ください。");
+      return;
+    }
+
+    // 1. 白黒かつ文字拡大用のクラスを適用
+    tagElement.classList.add('export-bw');
+
+    // 2. キャプチャ撮影
+    html2canvas(tagElement, {
+      scale: 3,
+      backgroundColor: '#ffffff'
+    }).then(canvas => {
+      // 撮影完了後、元の表示に戻す
+      tagElement.classList.remove('export-bw');
+
+      const imgData = canvas.toDataURL('image/png');
       
-    <div class="card">  
-      <div class="card-title"><span>1</span>レイアウトを選ぶ</div>  
-      <div class="btn-group grid-3">  
-        <div class="template-btn active" onclick="setLayout('default', this)">  
-          <div class="sample-mini-tag">  
-            <span style="font-weight:bold; font-size:11px;">🐾 Hana 🐾</span>  
-          </div>  
-          <span style="font-size:11px; font-weight:bold;">① 定番</span>  
-        </div>  
-  
-        <div class="template-btn" onclick="setLayout('number', this)">  
-          <div class="sample-mini-tag">  
-            <div style="border:1px solid #26140b; padding:1px 3px; border-radius:2px; display:flex; flex-direction:column; align-items:center;">  
-              <span style="font-size:6px; line-height:1;">名古屋 332</span>  
-              <span style="font-size:8px; font-weight:bold; line-height:1.1;">ぬ 37-50</span>  
-            </div>  
-          </div>  
-          <span style="font-size:11px; font-weight:bold;">② ナンバー</span>  
-        </div>  
-  
-        <div class="template-btn" onclick="setLayout('message', this)">  
-          <div class="sample-mini-tag">  
-            <span style="font-size:7px; line-height:1;">LOVE</span>  
-            <span style="font-size:8px; font-weight:bold; line-height:1.1;">♥ Hana ♥</span>  
-          </div>  
-          <span style="font-size:11px; font-weight:bold;">③ メッセージ</span>  
-        </div>  
-      </div>  
-    </div>  
-  
-    <div class="card">  
-      <div class="card-title"><span>2</span>文字を入力する</div>  
-      <input type="text" id="input1" value="Hana" placeholder="1行目 (例: Hana)" oninput="updateText()">  
-      <input type="text" id="input2" value="" placeholder="2行目" oninput="updateText()" style="display:none;">  
-    </div>  
-  
-    <div class="card">  
-      <div class="card-title"><span>3</span>フォントを選ぶ</div>  
-      <div class="btn-group grid-2">  
-        <button type="button" class="btn active" onclick="setFont('font-gothic', this)">ゴシック<br><span style="font-family:'Graphik'; font-weight:bold;">Aa</span></button>  
-        <button type="button" class="btn" onclick="setFont('font-mincho', this)">明朝体<br><span style="font-family:'Shippori Mincho'; font-weight:bold;">Aa</span></button>  
-        <button type="button" class="btn" onclick="setFont('font-script', this)">筆記体<br><span style="font-family:'Snell Roundhand'; font-weight:bold; font-size:120%;">Aa</span></button>  
-        <button type="button" class="btn" onclick="setFont('font-hand', this)">手書き風<br><span style="font-family:'Bradley Hand'; font-weight:bold;">Aa</span></button>  
-      </div>  
-    </div>  
-  
-    <div class="card">  
-      <div class="card-title"><span>4</span>アイコンと位置</div>  
-      <div style="margin-bottom: 8px;">  
-        <div class="btn-group grid-4" id="icon-selector">  
-          <button type="button" class="btn active" onclick="setIcon('', this)">なし</button>  
-          <button type="button" class="btn" onclick="setIcon('🐾', this)">🐾 肉球</button>  
-          <button type="button" class="btn" onclick="setIcon('🐕‍🦺', this)">🐕‍🦺 犬</button>  
-          <button type="button" class="btn" onclick="setIcon('🐈‍⬛', this)">🐈‍⬛ 猫</button>  
-          <button type="button" class="btn" onclick="setIcon('♥', this)">♥ ハート</button>  
-          <button type="button" class="btn" onclick="setIcon('★', this)">★ 星</button>  
-          <button type="button" class="btn" onclick="setIcon('🎵', this)">🎵 音符</button>  
-        </div>  
-      </div>  
-      <div class="card-title" style="margin-top:6px;">配置位置</div>  
-      <div class="btn-group grid-3">  
-        <button type="button" class="btn" onclick="setIconPos('front', this)">前</button>  
-        <button type="button" class="btn" onclick="setIconPos('back', this)">後</button>  
-        <button type="button" class="btn active" onclick="setIconPos('both', this)">前後</button>  
-      </div>  
-    </div>  
-  
-  </div>  
-  
-  <button type="button" class="save-btn" onclick="saveTagImage()">📷 刻印用データを保存（文字のみ白黒）</button>  
-  
-</div>  
-  
-<div class="modal-overlay" id="imageModal">  
-  <img id="modalImg" class="modal-img" src="" alt="刻印用データ">  
-  <div class="modal-text">白黒データが生成されました。<br>画像を長押しして保存してください。</div>  
-  <div class="close-btn" onclick="closeModal()">閉じる</div>  
-</div>  
-  
-<script>  
-  let currentLayout = 'default';  
-  let currentFont = 'font-gothic';  
-  let currentIcon = '';  
-  let currentIconPos = 'both';  
-  
-  const maxFontSizes = {  
-    'default': { line1: 58, line2: 0 },  
-    'number': { line1: 24, line2: 45 },  
-    'message': { line1: 33, line2: 33 }  
-  };  
-  
-  function updateText() {  
-    const line1Val = document.getElementById('input1').value;  
-    const line2Val = document.getElementById('input2').value;  
+      const link = document.createElement('a');
+      link.download = '刻印データ_文字のみ.png';
+      link.href = imgData;
       
-    let line1Text = line1Val;  
-    let line2Text = line2Val;  
-  
-    if (currentIcon) {  
-      if (currentLayout === 'message') {  
-        if (currentIconPos === 'front') line2Text = `${currentIcon} ${line2Val}`;  
-        else if (currentIconPos === 'back') line2Text = `${line2Val} ${currentIcon}`;  
-        else if (currentIconPos === 'both') line2Text = `${currentIcon} ${line2Val} ${currentIcon}`;  
-      } else {  
-        if (currentIconPos === 'front') line1Text = `${currentIcon} ${line1Val}`;  
-        else if (currentIconPos === 'back') line1Text = `${line1Val} ${currentIcon}`;  
-        else if (currentIconPos === 'both') line1Text = `${currentIcon} ${line1Val} ${currentIcon}`;  
-      }  
-    }  
-  
-    const elLine1 = document.getElementById('text-line1');  
-    const elLine2 = document.getElementById('text-line2');  
-  
-    elLine1.innerText = line1Text || ' ';  
-    elLine2.innerText = line2Text;  
-  
-    adjustFontSize();  
-  }  
-  
-  function adjustFontSize() {  
-    const tagContainer = document.getElementById('tag-preview');  
-    const padding = (currentLayout === 'number') ? 95 : 70;  
-    const maxWidth = tagContainer.clientWidth - padding;   
-  
-    const elLine1 = document.getElementById('text-line1');  
-    const elLine2 = document.getElementById('text-line2');  
-  
-    let size1 = maxFontSizes[currentLayout].line1;  
-    elLine1.style.fontSize = size1 + 'px';  
-    while (elLine1.scrollWidth > maxWidth && size1 > 10) {  
-      size1 -= 1;  
-      elLine1.style.fontSize = size1 + 'px';  
-    }  
-  
-    if (currentLayout !== 'default') {  
-      let size2 = maxFontSizes[currentLayout].line2;  
-      elLine2.style.fontSize = size2 + 'px';  
-      while (elLine2.scrollWidth > maxWidth && size2 > 10) {  
-        size2 -= 1;  
-        elLine2.style.fontSize = size2 + 'px';  
-      }  
-    }  
-  }  
-  
-  function setLayout(layout, el) {  
-    currentLayout = layout;  
-    const input2 = document.getElementById('input2');  
-    const content = document.getElementById('preview-content');  
-  
-    document.querySelectorAll('.template-btn').forEach(b => b.classList.remove('active'));  
-    el.classList.add('active');  
-  
-    content.classList.remove('layout-default', 'layout-number', 'layout-message', 'license-border');  
-  
-    if (layout === 'default') {  
-      content.classList.add('layout-default');  
-      input2.style.display = 'none';  
-    } else if (layout === 'number') {  
-      content.classList.add('layout-number', 'license-border');  
-      input2.style.display = 'block';  
-      input2.placeholder = "例: ぬ 37-50 (下段)";  
-      document.getElementById('input1').placeholder = "例: 名古屋 332 (上段)";  
-    } else if (layout === 'message') {  
-      content.classList.add('layout-message');  
-      input2.style.display = 'block';  
-      input2.placeholder = "例: Hana (下段)";  
-      document.getElementById('input1').placeholder = "例: LOVE (上段)";  
-    }  
-    updateText();  
-  }  
-  
-  function setFont(fontClass, el) {  
-    currentFont = fontClass;  
-    const content = document.getElementById('preview-content');  
+      document.getElementById('modalImg').src = imgData;
+      document.getElementById('imageModal').style.display = 'flex';
       
-    content.classList.remove('font-gothic', 'font-mincho', 'font-script', 'font-hand');  
-    content.classList.add(fontClass);  
-  
-    el.parentNode.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));  
-    el.classList.add('active');  
-  
-    adjustFontSize();  
-  }  
-  
-  function setIcon(iconSymbol, el) {  
-    currentIcon = iconSymbol;  
-    el.parentNode.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));  
-    el.classList.add('active');  
-    updateText();  
-  }  
-  
-  function setIconPos(pos, el) {  
-    currentIconPos = pos;  
-    el.parentNode.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));  
-    el.classList.add('active');  
-    updateText();  
-  }  
-  
-  // ★ 白黒画像出力処理（文字・選択時の囲み枠のみ） ★  
-  function saveTagImage() {  
-    const tagElement = document.getElementById('tag-preview');  
-      
-    if (typeof html2canvas === 'undefined') {  
-      alert("ライブラリが読み込めませんでした。ネット接続をご確認ください。");  
-      return;  
-    }  
-  
-    // 1. 白黒かつ枠線・穴非表示用のクラスを適用  
-    tagElement.classList.add('export-bw');  
-  
-    // 2. キャプチャ撮影  
-    html2canvas(tagElement, {  
-      scale: 3,  
-      backgroundColor: '#ffffff'  
-    }).then(canvas => {  
-      // 撮影完了後、元の表示に戻す  
-      tagElement.classList.remove('export-bw');  
-  
-      const imgData = canvas.toDataURL('image/png');  
-        
-      const link = document.createElement('a');  
-      link.download = '刻印データ_文字のみ.png';  
-      link.href = imgData;  
-        
-      document.getElementById('modalImg').src = imgData;  
-      document.getElementById('imageModal').style.display = 'flex';  
-        
-      link.click();  
-    }).catch(err => {  
-      tagElement.classList.remove('export-bw');  
-      alert("画像の生成に失敗しました。");  
-    });  
-  }  
-  
-  function closeModal() {  
-    document.getElementById('imageModal').style.display = 'none';  
-  }  
-</script>  
-</body>  
-</html>  
+      link.click();
+    }).catch(err => {
+      tagElement.classList.remove('export-bw');
+      alert("画像の生成に失敗しました。");
+    });
+  }
+
+  function closeModal() {
+    document.getElementById('imageModal').style.display = 'none';
+  }
+</script>
+</body>
+</html>
