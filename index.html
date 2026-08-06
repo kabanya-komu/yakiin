@@ -101,25 +101,37 @@
     max-width: 95%;
   }
 
-  /* --- 白黒データ出力用 スタイル（文字・モチーフを拡大保存） --- */
+  /* --- 白黒データ出力用 スタイル（文字・モチーフ最適化出力） --- */
   .export-bw {
     background: #ffffff !important;
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
-    padding: 8px !important; /* 穴用の左側余白を削って領域を最大活用 */
+    padding: 8px !important;
   }
   .export-bw .tag-hole {
-    display: none !important; /* 穴を非表示 */
+    display: none !important;
   }
   .export-bw .burn-text {
     color: #000000 !important;
     text-shadow: none !important;
-    transform: scale(1.6); /* 保存時のみ文字とモチーフを1.6倍にドカンと拡大 */
-    transform-origin: center center;
   }
   .export-bw .license-border {
     border-color: #000000 !important;
+  }
+
+  /* レイアウト別の保存時拡大率設定（はみ出し防止） */
+  .export-bw #preview-content.layout-default {
+    transform: scale(1.5);
+    transform-origin: center center;
+  }
+  .export-bw #preview-content.layout-number {
+    transform: scale(1.2);
+    transform-origin: center center;
+  }
+  .export-bw #preview-content.layout-message {
+    transform: scale(1.3);
+    transform-origin: center center;
   }
 
   /* レイアウトサイズ定義 */
@@ -498,7 +510,7 @@
     updateText();
   }
 
-  // ★ 白黒画像出力処理（文字・モチーフ拡大出力） ★
+  // ★ 白黒画像出力処理 ★
   function saveTagImage() {
     const tagElement = document.getElementById('tag-preview');
     
@@ -507,15 +519,12 @@
       return;
     }
 
-    // 1. 白黒かつ文字拡大用のクラスを適用
     tagElement.classList.add('export-bw');
 
-    // 2. キャプチャ撮影
     html2canvas(tagElement, {
       scale: 3,
       backgroundColor: '#ffffff'
     }).then(canvas => {
-      // 撮影完了後、元の表示に戻す
       tagElement.classList.remove('export-bw');
 
       const imgData = canvas.toDataURL('image/png');
