@@ -107,7 +107,7 @@
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
-    padding: 0 !important;
+    padding: 8px 15px !important;
   }
   .export-bw .tag-hole {
     display: none !important;
@@ -122,7 +122,7 @@
     padding: 8px 18px !important;
   }
 
-  /* レイアウトサイズ定義（画面表示時） */
+  /* レイアウトサイズ定義 */
   .layout-default .preview-line1 { font-size: 58px; }
   .layout-default .preview-line2 { display: none; }
 
@@ -131,15 +131,6 @@
 
   .layout-message .preview-line1 { font-size: 33px; }
   .layout-message .preview-line2 { font-size: 33px; margin-top: 4px; }
-
-  /* 保存時：各レイアウトごとの安全な文字拡大調整（transform不使用） */
-  .export-bw .layout-default .preview-line1 { font-size: 75px !important; }
-
-  .export-bw .layout-number .preview-line1 { font-size: 28px !important; }
-  .export-bw .layout-number .preview-line2 { font-size: 52px !important; }
-
-  .export-bw .layout-message .preview-line1 { font-size: 42px !important; }
-  .export-bw .layout-message .preview-line2 { font-size: 42px !important; }
 
   /* フォント定義 */
   .font-gothic * { font-family: 'Graphik', 'Noto Sans JP', sans-serif !important; font-weight: bold !important; }
@@ -519,7 +510,7 @@
     tagElement.classList.add('export-bw');
 
     html2canvas(tagElement, {
-      scale: 3,
+      scale: 4,
       backgroundColor: '#ffffff'
     }).then(canvas => {
       tagElement.classList.remove('export-bw');
