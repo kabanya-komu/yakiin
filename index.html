@@ -107,7 +107,7 @@
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
-    padding: 8px !important;
+    padding: 0 !important;
   }
   .export-bw .tag-hole {
     display: none !important;
@@ -118,23 +118,11 @@
   }
   .export-bw .license-border {
     border-color: #000000 !important;
+    border-width: 3px !important;
+    padding: 8px 18px !important;
   }
 
-  /* レイアウト別の保存時拡大率設定（はみ出し防止） */
-  .export-bw #preview-content.layout-default {
-    transform: scale(1.5);
-    transform-origin: center center;
-  }
-  .export-bw #preview-content.layout-number {
-    transform: scale(1.2);
-    transform-origin: center center;
-  }
-  .export-bw #preview-content.layout-message {
-    transform: scale(1.3);
-    transform-origin: center center;
-  }
-
-  /* レイアウトサイズ定義 */
+  /* レイアウトサイズ定義（画面表示時） */
   .layout-default .preview-line1 { font-size: 58px; }
   .layout-default .preview-line2 { display: none; }
 
@@ -143,6 +131,15 @@
 
   .layout-message .preview-line1 { font-size: 33px; }
   .layout-message .preview-line2 { font-size: 33px; margin-top: 4px; }
+
+  /* 保存時：各レイアウトごとの安全な文字拡大調整（transform不使用） */
+  .export-bw .layout-default .preview-line1 { font-size: 75px !important; }
+
+  .export-bw .layout-number .preview-line1 { font-size: 28px !important; }
+  .export-bw .layout-number .preview-line2 { font-size: 52px !important; }
+
+  .export-bw .layout-message .preview-line1 { font-size: 42px !important; }
+  .export-bw .layout-message .preview-line2 { font-size: 42px !important; }
 
   /* フォント定義 */
   .font-gothic * { font-family: 'Graphik', 'Noto Sans JP', sans-serif !important; font-weight: bold !important; }
