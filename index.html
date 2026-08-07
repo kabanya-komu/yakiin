@@ -101,13 +101,17 @@
     max-width: 95%;
   }
 
-  /* --- 白黒データ出力用 スタイル（文字・モチーフ最適化出力） --- */
+  /* --- 白黒データ出力用 スタイル（保存時のみ自動調整） --- */
   .export-bw {
     background: #ffffff !important;
     border: none !important;
     outline: none !important;
     box-shadow: none !important;
-    padding: 8px 15px !important;
+    width: auto !important;
+    min-width: 400px !important;
+    height: auto !important;
+    min-height: 170px !important;
+    padding: 15px 25px !important;
   }
   .export-bw .tag-hole {
     display: none !important;
@@ -119,7 +123,8 @@
   .export-bw .license-border {
     border-color: #000000 !important;
     border-width: 3px !important;
-    padding: 8px 18px !important;
+    padding: 10px 22px !important;
+    max-width: none !important;
   }
 
   /* レイアウトサイズ定義 */
@@ -498,22 +503,36 @@
     updateText();
   }
 
-  // ★ 白黒画像出力処理 ★
+  // ★ 白黒画像出力処理（保存時のみ1.2倍拡大） ★
   function saveTagImage() {
     const tagElement = document.getElementById('tag-preview');
+    const elLine1 = document.getElementById('text-line1');
+    const elLine2 = document.getElementById('text-line2');
     
     if (typeof html2canvas === 'undefined') {
       alert("ライブラリが読み込めませんでした。ネット接続をご確認ください。");
       return;
     }
 
+    // 元のフォントサイズを記録し、保存時のみ1.2倍に拡大
+    const origSize1 = parseFloat(window.getComputedStyle(elLine1).fontSize);
+    const origSize2 = parseFloat(window.getComputedStyle(elLine2).fontSize);
+
+    elLine1.style.fontSize = (origSize1 * 1.2) + 'px';
+    if (currentLayout !== 'default') {
+      elLine2.style.fontSize = (origSize2 * 1.2) + 'px';
+    }
+
     tagElement.classList.add('export-bw');
 
     html2canvas(tagElement, {
-      scale: 4,
+      scale: 3,
       backgroundColor: '#ffffff'
     }).then(canvas => {
+      // 出力完了後に元のフォントサイズとスタイルに戻す
       tagElement.classList.remove('export-bw');
+      elLine1.style.fontSize = origSize1 + 'px';
+      elLine2.style.fontSize = origSize2 + 'px';
 
       const imgData = canvas.toDataURL('image/png');
       
@@ -527,6 +546,8 @@
       link.click();
     }).catch(err => {
       tagElement.classList.remove('export-bw');
+      elLine1.style.fontSize = origSize1 + 'px';
+      elLine2.style.fontSize = origSize2 + 'px';
       alert("画像の生成に失敗しました。");
     });
   }
