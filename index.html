@@ -175,6 +175,14 @@
     font-size: 11px;
   }
 
+  .btn-group {
+    display: grid;
+    gap: 8px;
+  }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-5 { grid-template-columns: repeat(5, 1fr); }
+
   .template-btn {
     border: 2px solid var(--border-color);
     background: #faf6f0;
@@ -354,11 +362,9 @@
     <div class="card">
       <div class="card-title"><span>4</span>アイコンと位置</div>
       <div style="margin-bottom: 8px;">
-        <div class="btn-group grid-4" id="icon-selector">
+        <div class="btn-group grid-5" id="icon-selector">
           <button type="button" class="btn active" onclick="setIcon('', this)">なし</button>
           <button type="button" class="btn" onclick="setIcon('🐾', this)">🐾 肉球</button>
-          <button type="button" class="btn" onclick="setIcon('🐕‍🦺', this)">🐕‍🦺 犬</button>
-          <button type="button" class="btn" onclick="setIcon('🐈‍⬛', this)">🐈‍⬛ 猫</button>
           <button type="button" class="btn" onclick="setIcon('♥', this)">♥ ハート</button>
           <button type="button" class="btn" onclick="setIcon('★', this)">★ 星</button>
           <button type="button" class="btn" onclick="setIcon('🎵', this)">🎵 音符</button>
